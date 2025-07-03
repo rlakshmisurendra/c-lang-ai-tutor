@@ -2,3 +2,4 @@ Flask==3.0.3
 google-generativeai==0.4.1
 python-dotenv==1.0.1
 markdown2==2.4.12
+gunicorn
