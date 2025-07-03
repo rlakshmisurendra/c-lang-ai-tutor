@@ -3,15 +3,12 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Load environment variables
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
-app.secret_key = "123456"  # change this to a secure random value
+app.secret_key = "123456789"
 
-# Configure Gemini model
-genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 
@@ -31,7 +28,7 @@ def index():
         session.modified = True
 
         try:
-            prompt = f"You are a helpful C programming tutor. Answer this clearly:\n\n{user_input}"
+            prompt = f"You are a C programming tutor. Answer this clearly:\n\n{user_input}"
             response = model.generate_content(prompt).text
         except Exception as e:
             response = f"❌ Error: {e}"
@@ -41,13 +38,3 @@ def index():
         typing = False
 
     return render_template("index.html", chat_history=chat_history, typing=typing)
-
-
-@app.route("/clear")
-def clear():
-    session.pop("chat_history", None)
-    return "Chat history cleared."
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
