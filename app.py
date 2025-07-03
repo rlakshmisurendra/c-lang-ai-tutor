@@ -1,80 +1,36 @@
-import streamlit as st
-import google.generativeai as genai
+from flask import Flask, render_template, request, redirect, url_for
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
+import markdown2
+from markupsafe import Markup
 
-# Load API Key
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-# Page config
-st.set_page_config(page_title="C Programming Chatbot", page_icon="💬", layout="centered")
-st.markdown(
-    """
-    <style>
-        .chat-box {
-            background-color: #f1f3f6;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            font-family: 'Segoe UI', sans-serif;
-            box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.05);
-        }
-        .user-msg {
-            color: #222;
-            font-weight: bold;
-        }
-        .bot-msg {
-            color: #444;
-        }
-        .stTextInput>div>div>input {
-            border-radius: 10px;
-        }
-        .center-title {
-            text-align: center;
-            font-size: 26px;
-            font-weight: bold;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+app = Flask(__name__)
+chat_history = []
 
-st.markdown("<div class='center-title'>💻 C Programming AI Chatbot</div>", unsafe_allow_html=True)
-st.markdown("### Ask me anything about C programming")
+@app.route("/", methods=["GET", "POST"])
+def index():
+    global chat_history
+    if request.method == "POST":
+        user_input = request.form.get("user_input", "").strip()
+        if user_input:
+            prompt = f"You are a C programming tutor. Answer this clearly with example code if needed:\n\n{user_input}"
+            try:
+                response = model.generate_content(prompt)
+                reply_raw = response.text.strip()
+                reply_html = markdown2.markdown(reply_raw, extras=["fenced-code-blocks"])
+            except Exception as e:
+                reply_html = f"<div class='text-danger'>❌ Gemini API Error: {e}</div>"
 
-# Chat history
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+            chat_history.append(("You", Markup.escape(user_input)))
+            chat_history.append(("Bot", Markup(reply_html)))
 
-# Input
-with st.form("chat_form", clear_on_submit=True):
-    user_input = st.text_input("💬 Your question", placeholder="e.g., Explain malloc vs calloc")
-    submitted = st.form_submit_button("Send")
+        return redirect(url_for("index"))
+    return render_template("index.html", chat_history=chat_history)
 
-if submitted and user_input:
-    with st.spinner("Thinking..."):
-        try:
-            prompt = f"You are a C programming tutor. Answer this clearly:\n\n{user_input}"
-            response = model.generate_content(prompt)
-            reply = response.text
-
-            st.session_state.chat_history.append(("You", user_input))
-            st.session_state.chat_history.append(("Bot", reply))
-
-            st.toast("✅ Response generated!")
-
-        except Exception as e:
-            st.error(f"Gemini API Error: {e}")
-
-# Display chat history
-for role, message in st.session_state.chat_history:
-    icon = "🧑‍💻" if role == "You" else "🤖"
-    role_class = "user-msg" if role == "You" else "bot-msg"
-    st.markdown(f"""
-        <div class='chat-box'>
-            <span class='{role_class}'>{icon} <strong>{role}:</strong></span><br>
-            <span class='{role_class}'>{message}</span>
-        </div>
-    """, unsafe_allow_html=True)
+if __name__ == "__main__":
+    app.run(debug=True)

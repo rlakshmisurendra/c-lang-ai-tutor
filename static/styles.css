@@ -1,0 +1,24 @@
+.chat-box {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+.user-msg {
+    background-color: #e3f2fd;
+}
+.bot-msg {
+    background-color: #fff3cd;
+}
+.chat-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+}
+pre code {
+    font-size: 0.95em;
+    padding: 0.75rem;
+    border-radius: 8px;
+}
